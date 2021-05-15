@@ -1,5 +1,13 @@
 const SHA256 = require('crypto-js/sha256');
 
+class Transaction {
+    constructor(fromAddress, toAddress, amount) {
+        this.fromAddress = fromAddress;
+        this.toAddress = toAddress;
+        this.amount = amount;
+    }
+}
+
 /**
  * A block on a blockchain
  */
@@ -7,15 +15,13 @@ const SHA256 = require('crypto-js/sha256');
 class Block {
     /**
      * 
-     * @param {int} index Optional - indicates where the block sits on the chain
      * @param {Date} timestamp Block created
-     * @param {Object} data Type of data associated with the block (Example: Transaction details)
+     * @param {Object} transactions List of transactions
      * @param {String} previousHash Hash of the previous block
      */
-    constructor(index, timestamp, data, previousHash = '') {
-        this.index = index;
+    constructor(timestamp, transactions, previousHash = '') {
         this.timestamp = timestamp;
-        this.data = data;
+        this.transactions = transactions;
         this.previousHash = previousHash;
         // hash of this block
         this.hash = this.calculateHash();
@@ -27,7 +33,7 @@ class Block {
      * @returns SHA256 string which will be the hash of the current block
      */
     calculateHash() {
-        return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data) + this.nonce).toString();
+        return SHA256(this.previousHash + this.timestamp + JSON.stringify(this.data) + this.nonce).toString();
     }
 
     /**
@@ -53,6 +59,8 @@ class Blockchain {
         // initialize the chain with one block
         this.chain = [this.createGenesisBlock()];
         this.difficulty = 2;
+        this.pendingTransactions = [];
+        this.miningReward = 100;
     }
 
     /**
@@ -60,7 +68,7 @@ class Blockchain {
      * The first block on a blockchain is called 'Genesis Block'
      */
     createGenesisBlock() {
-        return new Block(0, "15/05/2021", "Genesis block", "0")
+        return new Block(Date.now(), "Genesis block", "0")
     }
 
     /**
@@ -73,7 +81,7 @@ class Blockchain {
 
     /**
      * 
-     * @param {*} newBlock 
+     * @param {Object} newBlock New block to be added
      */
     addBlock(newBlock) {
         // set previous hash to the hash of the last block on the chain
@@ -82,6 +90,54 @@ class Blockchain {
         newBlock.mineBlock(this.difficulty);
         // push the block to the chain
         this.chain.push(newBlock);
+    }
+
+    /**
+     * Miner - Validate a set of transactions and allocate them to a block, and in turn earn a reward
+     * @param {String} miningRewardAddress Address of the miner's wallet
+     */
+    minePendingTransactions(miningRewardAddress) {
+        let block = new Block(Date.now(), this.pendingTransactions);
+        block.mineBlock(this.difficulty);
+
+        console.log("Blocked successfully mined!");
+        this.chain.push(block);
+        
+        this.pendingTransactions = [
+            new Transaction(null, miningRewardAddress, this.miningReward)
+        ];
+    }
+
+    /**
+     * Adds a transaction to the pending transactions list
+     * @param {Transaction} transaction Transaction includes from & to address, amount
+     */
+    createTransaction(transaction) {
+        this.pendingTransactions.push(transaction);
+    }
+
+
+    /**
+     * Retrieve the balance of the given address
+     * @param {String} address Wallet address
+     * @returns Balance amount
+     */
+    getBalanceOfAddress(address) {
+        let balance = 0;
+
+        for (const block of this.chain) {
+            for (const transaction of block.transactions) {
+                if (transaction.fromAddress === address) {
+                    balance -= transaction.amount;
+                }
+
+                if (transaction.toAddress === address) {
+                    balance += transaction.amount;
+                }
+            }
+        }
+
+        return balance;
     }
 
     /**
@@ -109,19 +165,17 @@ class Blockchain {
     }
 }
 
-// create blockchain and add 2 blocks
+// create blockchain
 let kaushikCoin = new Blockchain();
-console.log("Mining block 1");
-kaushikCoin.addBlock(new Block(1, "15/05/2021", { amount: 420 }));
+kaushikCoin.createTransaction(new Transaction('address1', 'address2', 100));
+kaushikCoin.createTransaction(new Transaction('address2', 'address1', 50));
 
-console.log("Mining block 2");
-kaushikCoin.addBlock(new Block(2, "15/05/2021", { amount: 69 }));
+console.log("\nStarting the miner...");
+kaushikCoin.minePendingTransactions('kaushiks-address');
 
-console.log("Is blockchain valid? " + kaushikCoin.isChainValid());
+console.log("\nBalance of Kaushik is: " + kaushikCoin.getBalanceOfAddress('kaushiks-address')); 
 
-kaushikCoin.chain[1].data = { amount: 100 };
+console.log("\nStarting the miner...");
+kaushikCoin.minePendingTransactions('kaushiks-address');
 
-// returns false since data is tampered
-console.log("Is blockchain valid? " + kaushikCoin.isChainValid());
-
-console.log(JSON.stringify(kaushikCoin, null, 4));
+console.log("\nBalance of Kaushik is: " + kaushikCoin.getBalanceOfAddress('kaushiks-address')); 
