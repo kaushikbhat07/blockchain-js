@@ -19,6 +19,7 @@ class Block {
         this.previousHash = previousHash;
         // hash of this block
         this.hash = this.calculateHash();
+        this.nonce = 0;
     }
 
     /**
@@ -26,7 +27,21 @@ class Block {
      * @returns SHA256 string which will be the hash of the current block
      */
     calculateHash() {
-        return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data)).toString();
+        return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data) + this.nonce).toString();
+    }
+
+    /**
+     * Mines a block and verifies if the hash value has the number of zeroes set by difficulty
+     * Same method is used in bitcoin mining.
+     * @param {int} difficulty Length of characters to be checked
+     */
+    mineBlock(difficulty) {
+        while (this.hash.substring(0, difficulty) !== Array(difficulty + 1).join("0")) {
+            this.nonce += 1;
+            this.hash = this.calculateHash();
+        }
+
+        console.log("Block mined: " + this.hash);
     }
 }
 
@@ -37,6 +52,7 @@ class Blockchain {
     constructor() {
         // initialize the chain with one block
         this.chain = [this.createGenesisBlock()];
+        this.difficulty = 2;
     }
 
     /**
@@ -62,8 +78,8 @@ class Blockchain {
     addBlock(newBlock) {
         // set previous hash to the hash of the last block on the chain
         newBlock.previousHash = this.getLatestBlock().hash;
-        // re-calculate the hash as data was changed in the previous step
-        newBlock.hash = newBlock.calculateHash();
+        // mine block
+        newBlock.mineBlock(this.difficulty);
         // push the block to the chain
         this.chain.push(newBlock);
     }
@@ -95,13 +111,17 @@ class Blockchain {
 
 // create blockchain and add 2 blocks
 let kaushikCoin = new Blockchain();
+console.log("Mining block 1");
 kaushikCoin.addBlock(new Block(1, "15/05/2021", { amount: 420 }));
+
+console.log("Mining block 2");
 kaushikCoin.addBlock(new Block(2, "15/05/2021", { amount: 69 }));
 
 console.log("Is blockchain valid? " + kaushikCoin.isChainValid());
 
 kaushikCoin.chain[1].data = { amount: 100 };
 
+// returns false since data is tampered
 console.log("Is blockchain valid? " + kaushikCoin.isChainValid());
 
-// console.log(JSON.stringify(kaushikCoin, null, 4));
+console.log(JSON.stringify(kaushikCoin, null, 4));
