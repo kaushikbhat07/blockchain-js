@@ -1,1 +1,1 @@
-# Implementing a simple blockchain with JavaScript
+## Implementing a simple blockchain with JavaScript
