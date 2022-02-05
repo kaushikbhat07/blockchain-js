@@ -12,7 +12,7 @@ class Transaction {
      * @param {String} fromAddress From address
      * @param {String} toAddress Destination address
      * @param {Number} amount Amount of currency
-     * @param {Date} timestamp
+     * @param {number} timestamp
      */
     constructor(fromAddress, toAddress, amount, timestamp) {
         this.fromAddress = fromAddress;
@@ -183,7 +183,8 @@ class Blockchain {
         const rewardTransaction = new Transaction(
             "system",
             miningRewardAddress,
-            this.miningReward
+            this.miningReward,
+            Date.now()
         );
         this.pendingTransactions.push(rewardTransaction);
 
