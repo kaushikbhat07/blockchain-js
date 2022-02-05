@@ -8,11 +8,11 @@ const myWalletAddress = myKey.getPublic('hex');
 
 // create blockchain
 let kaushikCoin = new Blockchain();
-const tx1 = new Transaction(myWalletAddress, 'public key goes here', 70);
+const tx1 = new Transaction(myWalletAddress, 'public key goes here', 70, Date.now());
 tx1.signTransaction(myKey);
 kaushikCoin.addTransaction(tx1);
 
-const tx2 = new Transaction(myWalletAddress, 'public key goes here', 70);
+const tx2 = new Transaction(myWalletAddress, 'public key goes here', 70, Date.now());
 tx2.signTransaction(myKey);
 kaushikCoin.addTransaction(tx2);
 
@@ -23,8 +23,8 @@ console.log("\nBalance of Kaushik is: " + kaushikCoin.getBalanceOfAddress(myWall
 
 // console.log("\nStarting the miner again...");
 kaushikCoin.minePendingTransactions(myWalletAddress);
-
-console.log("\nBalance of Kaushik is: " + kaushikCoin.getBalanceOfAddress(myWalletAddress)); 
+//
+console.log("\nBalance of Kaushik is: " + kaushikCoin.getBalanceOfAddress(myWalletAddress));
 
 console.log("\nIs chain valid: " + kaushikCoin.isChainValid()); 
 

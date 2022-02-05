@@ -12,11 +12,13 @@ class Transaction {
      * @param {String} fromAddress From address
      * @param {String} toAddress Destination address
      * @param {Number} amount Amount of currency
+     * @param {Date} timestamp
      */
-    constructor(fromAddress, toAddress, amount) {
+    constructor(fromAddress, toAddress, amount, timestamp) {
         this.fromAddress = fromAddress;
         this.toAddress = toAddress;
         this.amount = amount;
+        this.timestamp = timestamp;
     }
 
     /**
@@ -25,7 +27,7 @@ class Transaction {
      */
     calculateHash() {
         return SHA256(
-            this.fromAddress + this.toAddress + this.amount
+            this.fromAddress + this.toAddress + this.amount + this.timestamp
         ).toString();
     }
 
@@ -51,7 +53,7 @@ class Transaction {
      */
     isValid() {
         // allow mining reward transactions
-        if (this.fromAddress === null) return true;
+        if (this.fromAddress === "system") return true;
 
         if (!this.signature || this.signature.length === 0) {
             throw new Error("No signature in this transaction!");
@@ -69,8 +71,8 @@ class Transaction {
 class Block {
     /**
      *
-     * @param {Date} timestamp Block created
-     * @param {Object} transactions List of transactions
+     * @param {number} timestamp Block created
+     * @param {Transaction} transactions List of transactions
      * @param {String} previousHash Hash of the previous block
      */
     constructor(timestamp, transactions, previousHash = "") {
@@ -173,13 +175,19 @@ class Blockchain {
      * @param {String} miningRewardAddress Address of the miner's wallet
      */
     minePendingTransactions(miningRewardAddress) {
+        // No pending transactions to mine
+        if (this.pendingTransactions.length === 0)
+            return;
+
+        // add reward for the transactions mined
         const rewardTransaction = new Transaction(
-            null,
+            "system",
             miningRewardAddress,
             this.miningReward
         );
         this.pendingTransactions.push(rewardTransaction);
 
+        // create block
         let block = new Block(Date.now(), this.pendingTransactions);
 
         this.addBlock(block);
@@ -214,8 +222,8 @@ class Blockchain {
     getBalanceOfAddress(address) {
         let balance = 0;
 
-        for (const block of this.chain) {
-            for (const transaction of block.transactions) {
+        for (let i = 1; i < this.chain.length; i++) {
+            for (const transaction of this.chain[i].transactions) {
                 if (transaction.fromAddress === address) {
                     balance -= transaction.amount;
                 }
@@ -235,7 +243,7 @@ class Blockchain {
      */
     isChainValid() {
         // loop through the chain, avoid i = 0, since it's a genesis block
-        for (let i = 1; i < this.chain.length; i += 1) {
+        for (let i = 1; i < this.chain.length; i++) {
             const currentBlock = this.chain[i];
             const previousBlock = this.chain[i - 1];
 
